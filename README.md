@@ -133,5 +133,3 @@ Built with care for the pharmacovigilance community. The goal is to make PV educ
 ---
 
 **If this tool helps you in your PV career, please share it with a colleague.** ⭐
-
-_© Vitrana Inc._
