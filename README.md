@@ -4,7 +4,7 @@
 
 200+ PV terms · 15 interactive scenarios · Quiz mode with spaced repetition · Works offline · Zero installation
 
-👉 **[Try it live](https://yourusername.github.io/pv-glossary/)** ← _Update this link after publishing_
+👉 **[Try it live](https://gauravkantgoel.github.io/pv-glossary/)** ← _Update this link after publishing_
 
 ---
 
