@@ -68,7 +68,7 @@ Visit **[the live app](https://gauravkantgoel.github.io/pv-glossary/)** No insta
 ### Option 2: Download for Offline Use
 1. Download `docs/index.html` from this repository
 2. Open it in any modern web browser
-3. That's it — everything is contained in a single file
+3. That's it. Everything is contained in a single file
 
 ### Option 3: For Training Departments
 Download and distribute `docs/index.html` to your team. It can be:
