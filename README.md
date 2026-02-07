@@ -63,7 +63,7 @@ Each scenario includes detailed feedback for every answer choice, inspector tips
 ## 🚀 Getting Started
 
 ### Option 1: Use Online (Recommended)
-Visit **[the live app](https://yourusername.github.io/pv-glossary/)** — no installation needed.
+Visit **[the live app](https://gauravkantgoel.github.io/pv-glossary/)** — no installation needed.
 
 ### Option 2: Download for Offline Use
 1. Download `docs/index.html` from this repository
