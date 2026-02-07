@@ -122,7 +122,7 @@ Contributions are welcome! Here are some ways to help:
 
 ## 📄 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
 Free to use, share, and modify. If you find it helpful, a mention or star is appreciated!
 
