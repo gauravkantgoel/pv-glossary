@@ -560,6 +560,13 @@ body {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 .stat-value {
@@ -1310,8 +1317,30 @@ mark {
     .search-box input:focus { width: 240px; }
     .mode-btn { display: none; }
     .mobile-menu-btn { display: block; }
-    .sidebar { position: fixed; left: 0; z-index: 50; }
-    .sidebar.collapsed { left: calc(-1 * var(--sidebar-width) + 60px); }
+    .sidebar {
+        position: fixed;
+        left: calc(-1 * var(--sidebar-width) - 10px);
+        z-index: 100;
+        transition: left 0.3s ease;
+        box-shadow: none;
+    }
+    .sidebar.mobile-open {
+        left: 0;
+        box-shadow: var(--shadow-lg);
+    }
+    .sidebar.collapsed {
+        left: calc(-1 * var(--sidebar-width) - 10px);
+    }
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 99;
+    }
+    .sidebar-overlay.visible {
+        display: block;
+    }
     .content-area { padding: 16px; }
     .quick-stats { grid-template-columns: 1fr 1fr; }
     .feature-cards { grid-template-columns: 1fr 1fr; }
@@ -2327,6 +2356,7 @@ mark {
                 </div>
                 <!-- Mobile Dropdown Menu -->
                 <div id="mobileMenu" class="mobile-menu">
+                    <button class="mobile-menu-item" onclick="PVGlossary.mobileMenuAction('categories')">📂 Browse Categories</button>
                     <button class="mobile-menu-item" onclick="PVGlossary.mobileMenuAction('scenarios')">🎬 Scenarios</button>
                     <button class="mobile-menu-item" onclick="PVGlossary.mobileMenuAction('quiz')">🎯 Quiz Mode</button>
                     <button class="mobile-menu-item" onclick="PVGlossary.mobileMenuAction('bookmarks')">⭐ Saved Terms</button>
@@ -2339,6 +2369,8 @@ mark {
 
         <!-- Main Content -->
         <main class="main-content" role="main">
+            <!-- Sidebar Overlay (mobile) -->
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
             <!-- Sidebar - Categories -->
             <aside class="sidebar" id="sidebar" role="navigation" aria-label="Term categories">
                 <div class="sidebar-header">
@@ -11112,6 +11144,7 @@ const PVGlossary = {
         
         // Mobile menu
         document.getElementById('mobileMenuBtn').addEventListener('click', () => this.toggleMobileMenu());
+        document.getElementById('sidebarOverlay').addEventListener('click', () => this.closeMobileSidebar());
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('mobileMenu');
             const btn = document.getElementById('mobileMenuBtn');
@@ -11131,12 +11164,16 @@ const PVGlossary = {
                 e.preventDefault();
                 searchInput.focus();
             }
-            // Escape closes mobile menu
+            // Escape closes mobile menu and sidebar
             if (e.key === 'Escape') {
                 const menu = document.getElementById('mobileMenu');
                 if (menu.classList.contains('open')) {
                     menu.classList.remove('open');
                     document.getElementById('mobileMenuBtn').focus();
+                }
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar.classList.contains('mobile-open')) {
+                    this.closeMobileSidebar();
                 }
             }
         });
@@ -11150,13 +11187,16 @@ const PVGlossary = {
         this.state.currentView = viewId;
 
         // Focus management: move focus to the first heading in the new view
-        requestAnimationFrame(() => {
-            const heading = view.querySelector('h2, h1');
-            if (heading) {
-                heading.setAttribute('tabindex', '-1');
-                heading.focus();
-            }
-        });
+        // Skip for searchView so the search input retains focus while typing
+        if (viewId !== 'searchView') {
+            requestAnimationFrame(() => {
+                const heading = view.querySelector('h2, h1');
+                if (heading) {
+                    heading.setAttribute('tabindex', '-1');
+                    heading.focus();
+                }
+            });
+        }
     },
 
     // Screen reader announcement
@@ -11184,6 +11224,7 @@ const PVGlossary = {
     mobileMenuAction(action) {
         document.getElementById('mobileMenu').classList.remove('open');
         switch (action) {
+            case 'categories': this.browseCategories(); break;
             case 'scenarios': this.showScenarioLibrary(); break;
             case 'quiz': this.startQuiz(); break;
             case 'bookmarks': this.showBookmarks(); break;
@@ -11272,19 +11313,19 @@ const PVGlossary = {
     renderWelcome() {
         const stats = document.getElementById('quickStats');
         stats.innerHTML = `
-            <div class="stat-card">
+            <div class="stat-card" onclick="PVGlossary.browseCategories()" title="Browse all terms by category" role="button" tabindex="0">
                 <div class="stat-value">${this.data.metadata.totalTerms}</div>
                 <div class="stat-label">Total Terms</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" onclick="PVGlossary.browseCategories()" title="Browse categories" role="button" tabindex="0">
                 <div class="stat-value">${this.data.categories.length}</div>
                 <div class="stat-label">Categories</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" onclick="PVGlossary.showStats()" title="View learning statistics" role="button" tabindex="0">
                 <div class="stat-value">${this.storage.learned.length}</div>
                 <div class="stat-label">Learned</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" onclick="PVGlossary.showBookmarks()" title="View bookmarked terms" role="button" tabindex="0">
                 <div class="stat-value">${this.storage.bookmarks.length}</div>
                 <div class="stat-label">Bookmarked</div>
             </div>
@@ -11308,6 +11349,11 @@ const PVGlossary = {
     showCategory(categoryId, pushHistory = true) {
         const category = this.data.categories.find(c => c.id === categoryId);
         if (!category) return;
+
+        // Close mobile sidebar when category selected
+        if (window.innerWidth <= 768) {
+            this.closeMobileSidebar();
+        }
 
         this.state.currentCategory = categoryId;
         this.updateCategoryHighlight(categoryId);
@@ -12103,12 +12149,49 @@ const PVGlossary = {
 
     toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
-        sidebar.classList.toggle('collapsed');
-        const isCollapsed = sidebar.classList.contains('collapsed');
-        const btn = document.getElementById('toggleSidebar');
-        btn.textContent = isCollapsed ? '▶' : '◀';
-        btn.setAttribute('aria-label', isCollapsed ? 'Expand sidebar' : 'Collapse sidebar');
-        sidebar.setAttribute('aria-hidden', isCollapsed);
+        const isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {
+            if (sidebar.classList.contains('mobile-open')) {
+                this.closeMobileSidebar();
+            } else {
+                this.openMobileSidebar();
+            }
+        } else {
+            sidebar.classList.toggle('collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            const btn = document.getElementById('toggleSidebar');
+            btn.textContent = isCollapsed ? '▶' : '◀';
+            btn.setAttribute('aria-label', isCollapsed ? 'Expand sidebar' : 'Collapse sidebar');
+            sidebar.setAttribute('aria-hidden', isCollapsed);
+        }
+    },
+
+    browseCategories() {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            this.openMobileSidebar();
+        } else {
+            const firstCat = this.data.categories[0];
+            if (firstCat) this.showCategory(firstCat.id);
+        }
+    },
+
+    openMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.remove('collapsed');
+        sidebar.classList.add('mobile-open');
+        sidebar.setAttribute('aria-hidden', 'false');
+        overlay.classList.add('visible');
+    },
+
+    closeMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.remove('mobile-open');
+        sidebar.setAttribute('aria-hidden', 'true');
+        overlay.classList.remove('visible');
     },
 
     updateProgress() {
